@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidden File Detector</title>
+    
+    <!-- Google Fonts for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Modern Animated Professional Theme */
+        :root {
+            --bg-dark: #050505;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-primary: #818cf8;
+            --accent-secondary: #c084fc;
+            --folder-color: #fbbf24;
+            --file-color: #94a3b8;
+            --hidden-color: #ef4444;
+            
+            /* Glassmorphism Variables */
+            --glass-bg: rgba(15, 23, 42, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- Animated Background Implementation --- */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 1), #050505);
+        }
+
+        /* Floating Light Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-primary);
+            top: -10%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-secondary);
+            bottom: -20%;
+            right: -10%;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: rgba(56, 189, 248, 0.3);
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation-duration: 25s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 40px) scale(1.1); }
+            100% { transform: translate(-20px, 60px) scale(0.9); }
+        }
+
+        /* Tech Grid Overlay */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%);
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%);
+        }
+        /* ------------------------------------------ */
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+        }
+
+        /* Glassmorphism Header */
+        header {
+            text-align: center;
+            padding: 30px;
+            background: rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--glass-shadow);
+            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, var(--accent-primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(129, 140, 248, 0.3);
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            font-weight: 300;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        /* Glass UI Elements */
+        .search-bar {
+            display: flex;
+            gap: 15px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 16px 24px;
+            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: rgba(129, 140, 248, 0.5);
+            background: rgba(15, 23, 42, 0.6);
+            box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.15);
+        }
+
+        button {
+            padding: 0 32px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(255,255,255,0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        button:hover::after { opacity: 1; }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(129, 140, 248, 0.5);
+        }
+        button:active { transform: translateY(1px); }
+
+        .btn-up {
+            background: var(--glass-bg);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+            box-shadow: none;
+        }
+        
+        .btn-up:hover {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Results Area */
+        .results-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2px; /* Small padding for inner scroll */
+            min-height: 400px;
+            position: relative;
+            box-shadow: var(--glass-shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 60px 3fr 1fr 2fr;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 18px 24px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid var(--glass-border);
+            border-radius: 18px 18px 0 0;
+        }
+
+        .file-list {
+            flex-grow: 1;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: grid;
+            grid-template-columns: 60px 3fr 1fr 2fr;
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            align-items: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .file-item:hover {
+            background: rgba(255,255,255,0.04);
+            transform: scale(1.002);
+        }
+
+        .file-item.is-hidden {
+            background: rgba(239, 68, 68, 0.03);
+            border-left: 3px solid var(--hidden-color);
+            padding-left: 21px; /* Adjust for border */
+        }
+
+        .file-item.is-hidden:hover {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        /* Icons */
+        .icon {
+            font-size: 1.4rem;
+            text-align: left;
+        }
+        .icon-dir { color: var(--folder-color); }
+        .icon-file { color: var(--file-color); }
+
+        .file-name {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-right: 15px;
+        }
+
+        .name-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-item.is-hidden .name-text {
+            color: #fca5a5;
+            font-weight: 500;
+        }
+
+        .badge-hidden {
+            font-size: 0.65rem;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            padding: 3px 8px;
+            border-radius: 6px;
+            width: fit-content;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .file-size, .file-date {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Loading & Empty states */
+        .message-box {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.05);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        /* Footer Styling */
+        footer {
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            display: inline-block;
+            padding: 12px 30px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .footer-content:hover {
+            border-color: rgba(129, 140, 248, 0.3);
+            color: var(--text-main);
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.2);
+        }
+
+        .footer-content strong {
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+
+    <!-- Animated Background Elements -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <div class="app-container">
+        <header>
+            <div class="header-content">
+                <h1>Hidden File Detector</h1>
+                <p>Uncover the invisible elements in your file system</p>
+            </div>
+        </header>
+
+        <main>
+            <!-- Controls -->
+            <div class="search-bar">
+                <button class="btn-up" id="btn-up" title="Go Up One Directory">↑ Up</button>
+                <input type="text" id="path-input" placeholder="Enter absolute directory path (e.g. C:\Users or /home)" value=".">
+                <button id="btn-scan">Scan Path</button>
+            </div>
+
+            <!-- File List Panel -->
+            <div class="results-container">
+                <div class="table-header">
+                    <div>Type</div>
+                    <div>Name</div>
+                    <div>Size</div>
+                    <div>Date Modified</div>
+                </div>
+                
+                <div class="file-list" id="file-list">
+                    <!-- Javascript will inject files here -->
+                    <div class="message-box">Initializing scanner...</div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                Designed by <strong>Mansi Ganvir</strong>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pathInput = document.getElementById('path-input');
+            const btnScan = document.getElementById('btn-scan');
+            const btnUp = document.getElementById('btn-up');
+            const fileList = document.getElementById('file-list');
+
+            let currentParentPath = null;
+
+            function formatBytes(bytes, decimals = 2) {
+                if (!+bytes) return '0 B';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+            }
+
+            function formatDate(isoString) {
+                if (!isoString) return '--';
+                const date = new Date(isoString);
+                return date.toLocaleString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric', 
+                    hour: '2-digit', minute:'2-digit'
+                });
+            }
+
+            async function loadDirectory(targetPath) {
+                fileList.innerHTML = `
+                    <div class="message-box">
+                        <div class="spinner"></div>
+                        <p>Scanning directory securely...</p>
+                    </div>`;
+
+                try {
+                    const response = await fetch('/api/explore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path: targetPath })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to scan directory');
+                    }
+
+                    pathInput.value = data.current_path;
+                    currentParentPath = data.parent_path;
+                    renderFiles(data.items);
+
+                } catch (error) {
+                    fileList.innerHTML = `
+                        <div class="message-box" style="color: #fca5a5;">
+                            <p style="font-size: 2rem; margin-bottom:10px;">⚠️</p>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.7;">Make sure the path exists and you have permission to view it.</p>
+                        </div>`;
+                }
+            }
+
+            function renderFiles(items) {
+                fileList.innerHTML = '';
+
+                if (items.length === 0) {
+                    fileList.innerHTML = '<div class="message-box">This folder is completely empty.</div>';
+                    return;
+                }
+
+                items.forEach((item, index) => {
+                    const el = document.createElement('div');
+                    el.className = `file-item ${item.is_hidden ? 'is-hidden' : ''}`;
+                    // Staggered animation effect
+                    el.style.animation = `slideUp 0.3s ease-out ${index * 0.02}s backwards`;
+                    
+                    const icon = item.is_dir ? '📁' : '📄';
+                    const iconClass = item.is_dir ? 'icon-dir' : 'icon-file';
+                    const sizeTxt = item.is_dir ? '--' : formatBytes(item.size);
+                    const hiddenBadge = item.is_hidden ? '<span class="badge-hidden">Hidden Target</span>' : '';
+
+                    el.innerHTML = `
+                        <div class="icon ${iconClass}">${icon}</div>
+                        <div class="file-name">
+                            <span class="name-text" title="${item.name}">${item.name}</span>
+                            ${hiddenBadge}
+                        </div>
+                        <div class="file-size">${sizeTxt}</div>
+                        <div class="file-date">${formatDate(item.modified)}</div>
+                    `;
+
+                    if (item.is_dir) {
+                        el.addEventListener('click', () => loadDirectory(item.path));
+                    }
+
+                    fileList.appendChild(el);
+                });
+            }
+
+            btnScan.addEventListener('click', () => loadDirectory(pathInput.value));
+            pathInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loadDirectory(pathInput.value);
+            });
+            btnUp.addEventListener('click', () => {
+                if (currentParentPath) loadDirectory(currentParentPath);
+            });
+
+            // Start scan natively on current directory
+            loadDirectory('.');
+        });
+    </script>
+</body>
+</html>
